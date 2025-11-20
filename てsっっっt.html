@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英単語テスト</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 30px;
+        }
+        .question-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .question-info {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .question-history {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .question-text {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .options button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #007bff;
+            background-color: #fff;
+            color: #007bff;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+            text-align: left;
+            font-size: 1em;
+        }
+        .options button:hover:not(:disabled) {
+            background-color: #e9f5ff;
+            border-color: #0056b3;
+        }
+        .options button:disabled {
+            cursor: default;
+        }
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+            line-height: 1.5;
+        }
+        .feedback.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .next-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .next-button:hover {
+            background-color: #218838;
+        }
+        .similar-sentence-button {
+            padding: 8px 15px;
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .similar-sentence-button:hover {
+            background-color: #e0a800;
+        }
+        .similar-sentence-content {
+            margin-top: 10px;
+            padding: 10px;
+            border-left: 3px solid #007bff;
+            background-color: #eaf3ff;
+            font-style: italic;
+            display: none;
+        }
+        .results {
+            text-align: center;
+            padding: 30px;
+        }
+        .results h2 {
+            color: #007bff;
+        }
+        .results button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .results .retake {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+        }
+        .results .new {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+
+        /* 正誤ボタンのスタイル */
+        .options button.correct-option {
+            background-color: #28a745;
+            color: white;
+            border-color: #218838;
+        }
+        .options button.incorrect-option {
+            background-color: #dc3545;
+            color: white;
+            border-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>英単語レベルテスト (Day 1〜4 サンプル)</h1>
+
+    <div id="quiz-container">
+        </div>
+
+    <div id="results-container" class="results" style="display: none;">
+        </div>
+</div>
+
+<script>
+    // --- 1. 単語データ ---
+    // Day 1〜4 の20単語をサンプルとして使用しています。全475語を使用するには、この配列に続けてデータを追加してください。
+    const vocabularyData = [
+        // Day 1
+        { word: "first name", pos: "noun", definition_jp: "出生時に与えられる個人の名前", example_en: "My full name is Patrick Sanders. Patrick is my first name.", example_jp: "私のフルネームはパトリック・サンダースです。パトリックは私の下の名前です。", day: 1, no: 1 },
+        { word: "nickname", pos: "noun", definition_jp: "非公式またはユーモラスに付けられた名前", example_en: "Red got his nickname because of the color of his hair.", example_jp: "赤毛だったので、レッドというあだ名が付けられました。", day: 1, no: 2 },
+        { word: "sightseeing", pos: "noun", definition_jp: "観光客が訪れる興味深い場所を訪れる活動", example_en: "I'm excited to see different sightseeing places in Japan.", example_jp: "日本のさまざまな観光地を見るのが楽しみです。", day: 1, no: 4 },
+        { word: "happiness", pos: "noun", definition_jp: "幸せな状態、または幸せであるという感覚", example_en: "The greatest happiness lies in freedom.", example_jp: "最大の幸福は自由の中にあります。", day: 1, no: 6 },
+        { word: "errand", pos: "noun", definition_jp: "個人的な用事や家庭のニーズのための短い外出", example_en: "I ran a few errands this morning, like picking up groceries and dropping off a package.", example_jp: "今朝、食料品の受け取りや荷物の発送など、いくつかの用事を済ませました。", day: 1, no: 12 },
+        // Day 2
+        { word: "logical", pos: "adjective", definition_jp: "事実や証拠に基づいている", example_en: "We need to find a logical solution to this problem. Let's do further research.", example_jp: "この問題の論理的な解決策を見つける必要があります。さらに調査しましょう。", day: 2, no: 3 },
+        { word: "evidence", pos: "noun", definition_jp: "何かが真実であることを示す事実、物体など", example_en: "Evidence has shown that rats and humans share the same types of nerve cells.", example_jp: "証拠は、ラットと人間が同じ種類の神経細胞を共有していることを示しています。", day: 2, no: 5 },
+        { word: "respond", pos: "verb", definition_jp: "誰かや何かに答える、または書き込む", example_en: "She only responded to my questions with a yes or no.", example_jp: "彼女は私の質問に「はい」か「いいえ」でのみ答えました。", day: 2, no: 7 },
+        { word: "small talk", pos: "noun", definition_jp: "重要でないことや日常的なことについての友好的な会話", example_en: "The audience stood around making small talk until the speaker arrived.", example_jp: "聴衆は講演者が到着するまで立ち話をしていました。", day: 2, no: 11 },
+        { word: "opinion", pos: "noun", definition_jp: "何かについてあなたが考えること、または信じること", example_en: "Everyone shared a different opinion about the movie's ending.", example_jp: "映画の結末について、誰もが異なる意見を共有しました。", day: 2, no: 23 },
+        // Day 3
+        { word: "household chore", pos: "noun", definition_jp: "家を清潔に保つために定期的に行うべき小さな作業", example_en: "Barry, do you mind doing the other household chores? My hands are already full.", example_jp: "バリー、他の家事も手伝ってもらえる？私はもう手が離せないの。", day: 3, no: 1 },
+        { word: "housekeeper", pos: "noun", definition_jp: "家やホテルなどの掃除や料理を管理するために雇われた人", example_en: "We need to hire a housekeeper when all our guests arrive.", example_jp: "全てのゲストが到着したら、ハウスキーパーを雇う必要があります。", day: 3, no: 2 },
+        { word: "furniture", pos: "noun", definition_jp: "椅子、テーブル、机、ソファなどの物体", example_en: "We need to buy more furniture. How are we going to eat if we don't have tables and chairs?", example_jp: "もっと家具を買う必要があります。テーブルと椅子がなかったらどうやって食べるつもりですか？", day: 3, no: 14 },
+        { word: "cozy", pos: "adjective", definition_jp: "小さくて、暖かく心地よい方法で快適な", example_en: "The cabin was small but cozy, with warm blankets and a fireplace.", example_jp: "その小屋は小さかったが、暖かい毛布と暖炉があり、居心地が良かった。", day: 3, no: 23 },
+        { word: "organize", pos: "verb", definition_jp: "きちんと整理され、見つけやすいように物事を配列する", example_en: "I spent the weekend organizing my closet and getting rid of old clothes.", example_jp: "週末はクローゼットを整理し、古い服を処分しました。", day: 3, no: 25 },
+        // Day 4
+        { word: "chef", pos: "noun", definition_jp: "レストランなどで料理をする人の仕事、特に最も重要な料理人", example_en: "The hotel's chef trained at the finest culinary institutes in Europe.", example_jp: "そのホテルのシェフは、ヨーロッパの最高の料理学校で訓練を受けました。", day: 4, no: 2 },
+        { word: "banquet", pos: "noun", definition_jp: "特別な機会に用意される、多くの場合フォーマルな大規模な食事", example_en: "The company hosted a banquet to celebrate the launch of its new product line.", example_jp: "会社は新製品の発売を祝うために晩餐会を主催しました。", day: 4, no: 3 },
+        { word: "ingredient", pos: "noun", definition_jp: "特定の料理を作るために使用される食品または物質", example_en: "I heard they pick their ingredients thoroughly, so there's nothing to worry about.", example_jp: "彼らは材料を徹底的に選ぶと聞いたので、心配することはありません。", day: 4, no: 7 },
+        { word: "cuisine", pos: "noun", definition_jp: "特定の国や地域に特有の料理スタイル", example_en: "There is a newly opened restaurant on the next block. They offer Thai cuisine.", example_jp: "次のブロックに新しくオープンしたレストランがあります。彼らはタイ料理を提供しています。", day: 4, no: 8 },
+        { word: "dessert", pos: "noun", definition_jp: "食事の最後に出る甘いコース", example_en: "For dessert, we had chocolate cake with fresh strawberries on top.", example_jp: "デザートには、新鮮なイチゴがのったチョコレートケーキを食べました。", day: 4, no: 24 },
+    ];
+
+    // --- 2. クイズの状態管理 ---
+    const NUM_QUESTIONS = 5;
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let correctCount = 0;
+    
+    // 単語の学習履歴（すべての単語が対象）
+    // 例: { "first name": { asked: 3, correct: 1 }, "nickname": { asked: 2, correct: 2 }, ... }
+    let wordHistory = {};
+    vocabularyData.forEach(item => {
+        wordHistory[item.word] = { asked: 0, correct: 0 };
+    });
+
+    const quizContainer = document.getElementById('quiz-container');
+    const resultsContainer = document.getElementById('results-container');
+
+    // --- 3. 問題生成ロジック ---
+    function generateNewQuestions() {
+        // 未出題の単語を優先し、次に正答率の低い単語を優先するロジック
+        let prioritizedWords = vocabularyData
+            .map(item => ({
+                ...item,
+                history: wordHistory[item.word],
+                score: wordHistory[item.word].asked > 0 
+                    ? wordHistory[item.word].correct / wordHistory[item.word].asked // 正答率
+                    : -1 // 未出題の単語は最低スコア（最大優先）
+            }))
+            .sort((a, b) => {
+                // 1. 未出題 (-1) を優先
+                if (a.score !== b.score) {
+                    return a.score - b.score;
+                }
+                // 2. 正答率が低いものを優先 (scoreが同じならランダム性を加える)
+                return Math.random() - 0.5;
+            });
+        
+        // 優先度の高い順に5つ選び、ランダム性を加える
+        const selectedWords = prioritizedWords.slice(0, NUM_QUESTIONS);
+
+        currentQuestions = selectedWords.map(correctItem => {
+            // 3つの異なるダミー単語を選択
+            const otherWords = vocabularyData.filter(item => item.word !== correctItem.word);
+            const distractors = [];
+            while (distractors.length < 3) {
+                const randomIndex = Math.floor(Math.random() * otherWords.length);
+                const distractor = otherWords[randomIndex].word;
+                if (!distractors.includes(distractor)) {
+                    distractors.push(distractor);
+                }
+            }
+            
+            // 選択肢のシャッフル
+            let options = [...distractors, correctItem.word];
+            options = options.sort(() => Math.random() - 0.5);
+
+            // 穴埋め問題の作成
+            const questionText = correctItem.example_en.replace(new RegExp('\\b' + correctItem.word + '\\b', 'i'), '___');
+
+            return {
+                id: correctItem.word,
+                text: questionText,
+                correct: correctItem.word,
+                options: options,
+                details: correctItem
+            };
+        });
+
+        startQuiz();
+    }
+
+    function generateSameQuestions() {
+        // 現在の問題をそのまま使用して再挑戦
+        startQuiz();
+    }
+
+    function startQuiz() {
+        currentQuestionIndex = 0;
+        correctCount = 0;
+        quizContainer.style.display = 'block';
+        resultsContainer.style.display = 'none';
+        renderQuestion(currentQuestionIndex);
+    }
+
+    // --- 4. 問題描画ロジック ---
+    function renderQuestion(index) {
+        if (index >= NUM_QUESTIONS) {
+            showResults();
+            return;
+        }
+
+        const q = currentQuestions[index];
+        const history = wordHistory[q.id];
+        
+        quizContainer.innerHTML = `
+            <div class="question-card">
+                <h2>問題 ${index + 1} / ${NUM_QUESTIONS}</h2>
+                <div class="question-info">
+                    <span>${q.details.day}日目 - No.${q.details.no}</span>
+                    <span class="question-history">
+                        履歴: 出題 ${history.asked}回 / 正解 ${history.correct}回
+                    </span>
+                </div>
+                <div class="question-text">
+                    以下の文の空欄に最も適切な単語を選びなさい。
+                    <p><strong>${q.text}</strong></p>
+                </div>
+                <div class="options" id="options-${index}">
+                    ${q.options.map(option => `
+                        <button onclick="checkAnswer(${index}, '${option.replace(/'/g, "\\'")}')">${option}</button>
+                    `).join('')}
+                </div>
+                
+                <div class="feedback" id="feedback-${index}"></div>
+                
+                <button class="similar-sentence-button" id="similar-btn-${index}" onclick="showSimilarSentence(${index})" disabled>
+                    類似の英文を見る
+                </button>
+                <div class="similar-sentence-content" id="similar-content-${index}"></div>
+
+                <button class="next-button" id="next-btn-${index}" onclick="nextQuestion()" style="display: none;">
+                    次の問題へ
+                </button>
+            </div>
+        `;
+    }
+
+    // --- 5. 解答チェックロジック ---
+    function checkAnswer(index, selectedWord) {
+        const q = currentQuestions[index];
+        const isCorrect = (selectedWord === q.correct);
+        const feedbackDiv = document.getElementById(`feedback-${index}`);
+        const optionsDiv = document.getElementById(`options-${index}`);
+        const nextButton = document.getElementById(`next-btn-${index}`);
+        const similarButton = document.getElementById(`similar-btn-${index}`);
+        
+        // 履歴の更新
+        wordHistory[q.id].asked += 1;
+        if (isCorrect) {
+            correctCount++;
+            wordHistory[q.id].correct += 1;
+        }
+
+        // ボタンのスタイルとフィードバックの表示
+        optionsDiv.querySelectorAll('button').forEach(button => {
+            button.disabled = true; // 解答後の無効化
+            if (button.textContent === selectedWord) {
+                button.classList.add(isCorrect ? 'incorrect-option' : 'incorrect-option'); // 選択した答え
+            }
+            if (button.textContent === q.correct) {
+                button.classList.add('correct-option'); // 正解の答え
+            }
+        });
+
+        const feedbackMessage = isCorrect ? '正解です！よくできました！' : 'もう一度頑張りましょう。';
+        
+        feedbackDiv.innerHTML = `
+            <strong>${feedbackMessage}</strong><br>
+            <br>
+            <strong>【正解】</strong> ${q.correct} (${q.details.pos})<br>
+            <strong>【解説】</strong> ${q.details.definition_jp}
+        `;
+        feedbackDiv.classList.add(isCorrect ? 'correct' : 'incorrect');
+        feedbackDiv.style.display = 'block';
+
+        // 次へボタンと類似英文ボタンの有効化
+        nextButton.style.display = 'block';
+        similarButton.disabled = false;
+    }
+
+    // --- 6. 類似の英文表示ロジック ---
+    function showSimilarSentence(index) {
+        const q = currentQuestions[index];
+        const contentDiv = document.getElementById(`similar-content-${index}`);
+        
+        if (contentDiv.style.display === 'block') {
+            contentDiv.style.display = 'none';
+        } else {
+            contentDiv.innerHTML = `
+                <p><strong>類似の英文:</strong> ${q.details.example_en}</p>
+                <p><strong>日本語訳:</strong> ${q.details.example_jp}</p>
+            `;
+            contentDiv.style.display = 'block';
+        }
+    }
+
+    // --- 7. 次の問題へ/結果表示 ---
+    function nextQuestion() {
+        currentQuestionIndex++;
+        renderQuestion(currentQuestionIndex);
+    }
+
+    // --- 8. 結果表示ロジック ---
+    function showResults() {
+        const correctRate = ((correctCount / NUM_QUESTIONS) * 100).toFixed(1);
+        
+        quizContainer.style.display = 'none';
+        resultsContainer.innerHTML = `
+            <h2>テスト終了！</h2>
+            <p><strong>正解数: ${correctCount} / ${NUM_QUESTIONS} 問</strong></p>
+            <p style="font-size: 1.5em; color: ${correctRate >= 80 ? '#28a745' : '#ffc107'};">
+                <strong>正解率: ${correctRate}%</strong>
+            </p>
+            <hr>
+            <button class="retake" onclick="generateSameQuestions()">同じ問題に再挑戦</button>
+            <button class="new" onclick="generateNewQuestions()">新しい問題に挑戦</button>
+        `;
+        resultsContainer.style.display = 'block';
+    }
+
+    // クイズの開始
+    window.onload = generateNewQuestions;
+</script>
+
+</body>
+</html>
